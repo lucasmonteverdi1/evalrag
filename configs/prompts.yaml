@@ -1,5 +1,13 @@
-# Pinned prompt versions. The judge client loads prompts from prompts/<metric>_<version>.md.
-# Bump the version here to switch prompts; old runs stay reproducible via the cache.
+# Pinned prompt versions.
+# The judge client loads prompts from prompts/<metric>_<version>.md.
+# Bump the version string here to switch prompts for all future runs;
+# old runs remain reproducible because the cache key includes the version.
+
+# MVP metrics
 faithfulness: v1
 answer_relevance: v1
 context_precision: v1
+
+# Optional metrics (uncomment when implemented)
+# answer_correctness: v1
+# context_recall: v1

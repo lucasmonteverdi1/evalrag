@@ -5,9 +5,20 @@ judge:
   provider: openai          # first backend; swap without changing code
   model: gpt-4o-mini        # override with a stronger model for production
   temperature: 0
+  max_tokens: 1024          # enough for chain-of-thought + structured verdict
+  timeout_seconds: 30
+  max_retries: 3
 
 # The pipeline-under-test generator model (set when running evaluations).
 # Kept here so it is recorded alongside the judge version for reproducibility.
 pipeline_generator:
   provider: openai
   model: gpt-3.5-turbo
+  temperature: 0            # keep deterministic for reproducible eval runs
+  max_tokens: 512
+
+# Response cache — all LLM calls are keyed by (provider, model, prompt_version, inputs).
+# Re-runs read from cache; set enabled: false only for debugging.
+cache:
+  enabled: true
+  dir: .cache/llm_responses

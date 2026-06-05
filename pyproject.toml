@@ -23,6 +23,7 @@ packages = ["evalrag"]
 [dependency-groups]
 dev = [
     "pytest>=8.0",
+    "pre-commit>=3.0",
     "ruff>=0.6",
 ]
 

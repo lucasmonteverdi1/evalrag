@@ -1,5 +1,16 @@
-# Per-metric pass thresholds (0.0–1.0). The CLI exits non-zero when any
-# aggregate score falls below its threshold.
+# Per-metric pass thresholds (0.0–1.0).
+# The CLI exits non-zero when any enabled metric's aggregate score falls below
+# its threshold. Set a threshold to null to disable gating for that metric.
+
+# MVP metrics
 faithfulness: 0.8
 answer_relevance: 0.7
 context_precision: 0.7
+
+# Optional metrics (not yet implemented; null = not gated)
+answer_correctness: null
+context_recall: null
+
+# When strict_mode is true, ANY individual EvalCase below threshold fails the
+# run (not just the aggregate). Useful for catching catastrophic regressions.
+strict_mode: false
