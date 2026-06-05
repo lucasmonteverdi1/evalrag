@@ -1,0 +1,13 @@
+# Judge model config — temperature must be 0 for reproducibility.
+# The judge model MUST differ from the pipeline's generator model to avoid
+# self-preference bias inflating scores.
+judge:
+  provider: openai          # first backend; swap without changing code
+  model: gpt-4o-mini        # override with a stronger model for production
+  temperature: 0
+
+# The pipeline-under-test generator model (set when running evaluations).
+# Kept here so it is recorded alongside the judge version for reproducibility.
+pipeline_generator:
+  provider: openai
+  model: gpt-3.5-turbo

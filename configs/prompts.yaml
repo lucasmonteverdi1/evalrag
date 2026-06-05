@@ -1,0 +1,5 @@
+# Pinned prompt versions. The judge client loads prompts from prompts/<metric>_<version>.md.
+# Bump the version here to switch prompts; old runs stay reproducible via the cache.
+faithfulness: v1
+answer_relevance: v1
+context_precision: v1

@@ -1,0 +1,5 @@
+# Per-metric pass thresholds (0.0–1.0). The CLI exits non-zero when any
+# aggregate score falls below its threshold.
+faithfulness: 0.8
+answer_relevance: 0.7
+context_precision: 0.7
