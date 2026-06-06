@@ -1,24 +1,23 @@
-# Judge model config — temperature must be 0 for reproducibility.
-# The judge model MUST differ from the pipeline's generator model to avoid
-# self-preference bias inflating scores.
 judge:
-  provider: openai          # first backend; swap without changing code
-  model: gpt-4o-mini        # override with a stronger model for production
-  temperature: 0
-  max_tokens: 1024          # enough for chain-of-thought + structured verdict
+  provider: openrouter
+  base_url: https://openrouter.ai/api/v1
+  api_key_env: OPENROUTER_API_KEY   # names WHICH env var holds the key; value never in YAML
+  model: google/gemini-2.5-flash
+  temperature: 0                    # Reproducibility
+  max_tokens: 1024
   timeout_seconds: 30
   max_retries: 3
 
 # The pipeline-under-test generator model (set when running evaluations).
-# Kept here so it is recorded alongside the judge version for reproducibility.
 pipeline_generator:
-  provider: openai
-  model: gpt-3.5-turbo
-  temperature: 0            # keep deterministic for reproducible eval runs
+  provider: openrouter
+  base_url: https://openrouter.ai/api/v1
+  api_key_env: OPENROUTER_API_KEY
+  model: openai/gpt-4o
+  temperature: 0
   max_tokens: 512
 
-# Response cache — all LLM calls are keyed by (provider, model, prompt_version, inputs).
-# Re-runs read from cache; set enabled: false only for debugging.
+# Response cache — all LLM calls keyed by (provider, model, prompt_version, inputs).
 cache:
   enabled: true
   dir: .cache/llm_responses
