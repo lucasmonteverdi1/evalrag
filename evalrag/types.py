@@ -24,7 +24,7 @@ class EvalCase:
 
     question: str
     generated_answer: str
-    retrieved_chunks: tuple[Chunk, ...]  # frozen — use tuple, not list
+    retrieved_chunks: tuple[Chunk, ...]
     expected_answer: str | None = None
     source_chunk_id: str | None = None
 
