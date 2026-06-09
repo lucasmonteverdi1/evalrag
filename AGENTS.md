@@ -30,20 +30,22 @@ make every scoring decision explainable.
 evalrag/
 ├── pyproject.toml
 ├── README.md
-├── AGENTS.md
+├── AGENTS.md                # canonical agent context (CLAUDE.md re-exports this)
+├── CLAUDE.md                # stub: @AGENTS.md
 ├── evalrag/                 # importable core library
 │   ├── __init__.py
 │   ├── types.py             # EvalCase, MetricResult, Chunk (dataclasses)
+│   ├── config.py            # frozen config dataclasses loaded from configs/*.yaml
 │   ├── generator/           # synthetic (question, expected_answer) generation
 │   ├── runner/              # pipeline adapter + execution loop
-│   ├── scorer/              # metric implementations
+│   ├── scorer/              # metric implementations (faithfulness.py done)
 │   ├── judge/               # LLM-as-judge client + versioned prompt loading
 │   ├── validation/          # offline judge-validation harness
 │   ├── report/              # JSON + HTML rendering
 │   └── cli.py               # thin CLI entrypoint (exposed via pyproject script)
 ├── prompts/                 # versioned judge prompts (e.g. faithfulness_v1.md)
 ├── configs/                 # YAML: models, thresholds, prompt versions
-├── testdata/                # sample docs + hand-written stub eval cases
+├── testdata/                # importable pkg: MetricStub + hand-written stub eval cases
 ├── tests/
 └── docs/                    # architecture decisions, metric definitions
 ```
@@ -133,25 +135,41 @@ loop and does NOT affect the evaluation run's exit code.
 - Cache every LLM/judge response keyed by (model, prompt_version, inputs); re-runs read
   the cache. Persist raw responses.
 
-## Build order (scorer-first phasing)
+## Build order (scorer-first phasing) — status
 
-Build against the data flow in REVERSE so the novel part is proven first:
+Build against the data flow in REVERSE so the novel part is proven first.
 
-1. `types.py` — `EvalCase`, `MetricResult`, `Chunk`.
-2. `judge/` — minimal judge client (configurable model, temp 0, versioned prompt loading,
-   response caching, raw-output capture).
-3. `scorer/faithfulness.py` — ONE metric, end to end, fed 4–5 **hand-written stub
-   `EvalCase`s** in `testdata/`. Print per-case scores + rationales. (No generator/runner
-   yet.)
-4. `validation/` — label those stubs by hand; compute judge↔human agreement; confirm the
-   judge is trustworthy.
-5. THEN: `runner/` (adapter + loop), then `scorer/` relevance + precision, then
-   `generator/`, then `report/` (JSON + HTML), then CLI threshold-gating + exit codes.
+- [x] **1.** `types.py` — `EvalCase`, `MetricResult`, `Chunk`.
+- [x] **2.** `judge/` — judge client (configurable model, temp 0, versioned prompt
+  loading, response caching, raw-output capture) + `config.py`.
+- [x] **3.** `scorer/faithfulness.py` — ONE metric, end to end, over hand-written stub
+  `EvalCase`s in `testdata/`; prints per-case scores + rationales via an offline demo.
+- [ ] **4.** `validation/` — label those stubs by hand; compute judge↔human agreement;
+  confirm the judge is trustworthy. ← **next**
+- [ ] **5.** THEN: `runner/` (adapter + loop) → `scorer/` relevance + precision →
+  `generator/` → `report/` (JSON + HTML) → CLI threshold-gating + exit codes.
 
-## First task
+## Repo conventions (decisions already made — keep consistent)
 
-Scaffold the repo (pyproject with `uv`, the package layout above, a `tests/` dir), define
-the core data types in `evalrag/types.py`, implement a minimal `judge/` client, and build
-`scorer/faithfulness.py` so it scores a handful of hand-written stub `EvalCase`s and prints
-each score with its rationale. Add a unit test for the claim-decomposition logic. Commit in
-small, well-described steps.
+- **Env/deps:** `uv` only. Run via `uv run` (`uv run pytest`, `uv run ruff check .`,
+  `uv run python -m evalrag.scorer` for the faithfulness demo).
+- **Provider abstraction (two layers):** scorers/judge depend only on the `LLMProvider`
+  Protocol (`evalrag/judge/provider.py`); never import a vendor SDK directly. The real
+  transport is the **OpenAI SDK pointed at OpenRouter** via a configurable `base_url`, so
+  model strings are vendor-qualified (`anthropic/...`, `openai/...`, `google/...`).
+- **Config (`evalrag/config.py`):** frozen dataclasses loaded from `configs/*.yaml` with
+  `pyyaml`. Precedence is **CLI flag > env var > YAML default** (applied in
+  `load_models_config` via the `overrides` dict). **Secrets come from env only** — YAML
+  names *which* env var holds the key (`api_key_env`), never the value.
+- **Self-preference guard:** `judge_matches_generator()` is the pure predicate; the CLI
+  (when built) warns + prompts to continue when judge and generator models match.
+- **Testing is hermetic:** tests and the demo use the deterministic `FakeProvider` (no
+  network, no key). The real OpenRouter path is exercised only manually with a key — CI
+  never hits the network.
+- **Test data is a package:** `testdata/` is importable; stubs use the generic
+  `MetricStub[L]` (`testdata/stubs.py`) so every metric reuses one shape. Stub ground-truth
+  labels generate the FakeProvider verdicts, so they can't drift from the claims.
+- **CI / hooks:** `.github/workflows/ci.yml` runs ruff + pytest on push/PR to main;
+  `.pre-commit-config.yaml` runs them before each commit.
+- **Commits:** small and well-described; settings/config commits kept separate from
+  feature commits.
