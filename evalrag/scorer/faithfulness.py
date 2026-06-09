@@ -61,22 +61,22 @@ def _render_prompt(template: str, claims: list[str], case: EvalCase) -> str:
     return template.format(claims=claims_block, context=context_block)
 
 
-def score_faithfulness(
+def judge_claims(
     case: EvalCase,
     judge: JudgeClient,
     *,
     prompts_dir: str = "prompts",
-) -> MetricResult:
-    claims = decompose_claims(case.generated_answer)
+) -> tuple[list[str], list[bool], str | None]:
+    """Decompose the answer, ask the judge, and return (claims, verdicts, raw_output).
 
-    # Edge case: an answer with no extractable claims is vacuously faithful.
+    Shared by score_faithfulness and the validation harness so the judge-calling
+    path lives in one place. raw_output is the judge's verbatim response (None when
+    there are no claims and thus no judge call). Raises VerdictParseError if the
+    judge's verdict count doesn't match the claim count.
+    """
+    claims = decompose_claims(case.generated_answer)
     if not claims:
-        return MetricResult(
-            metric=METRIC,
-            score=1.0,
-            rationale="No atomic claims extracted from the answer; nothing to verify.",
-            raw_judge_output=None,
-        )
+        return [], [], None
 
     version = judge.version_for(METRIC)
     template = load_prompt(METRIC, version, prompts_dir=prompts_dir)
@@ -89,13 +89,29 @@ def score_faithfulness(
         raise VerdictParseError(
             f"judge returned {len(verdicts)} verdicts for {len(claims)} claims"
         )
+    return claims, verdicts, result.raw_output
+
+
+def score_faithfulness(
+    case: EvalCase,
+    judge: JudgeClient,
+    *,
+    prompts_dir: str = "prompts",
+) -> MetricResult:
+    claims, verdicts, raw_output = judge_claims(case, judge, prompts_dir=prompts_dir)
+
+    # Edge case: answer with no extractable claims.
+    if not claims:
+        return MetricResult(
+            metric=METRIC,
+            score=1.0,
+            rationale="No atomic claims extracted from the answer; nothing to verify.",
+            raw_judge_output=None,
+        )
 
     supported = sum(verdicts)
     score = supported / len(claims)
-    lines = [
-        f"{'✓' if ok else '✗'} {claim}"
-        for claim, ok in zip(claims, verdicts)
-    ]
+    lines = [f"{'✓' if ok else '✗'} {claim}" for claim, ok in zip(claims, verdicts)]
     rationale = (
         f"{supported}/{len(claims)} claims grounded in retrieved context.\n"
         + "\n".join(lines)
@@ -104,5 +120,5 @@ def score_faithfulness(
         metric=METRIC,
         score=score,
         rationale=rationale,
-        raw_judge_output=result.raw_output,
+        raw_judge_output=raw_output,
     )
