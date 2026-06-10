@@ -83,3 +83,18 @@ also, which would result in `kappa = 0`, proving that the judge is useless.
 
 What is actually measured is: "from the agreement NOT explained by chance, what was the score?"
 
+## Runner
+Piece that generates `EvalCase`s automatically from real questions.
+
+### The 3 pieces
+- `PipelineAdapter` (The contract): Allows extensibility. The runner doesn't know how the user's pipeline
+is implemented, it only asks for `run(pregunta) → (chunks, answer)`. 
+**Anyone** can connect their pipeline just by implementing that function.
+- `run_pipeline` (the loop): it loops the questions calls the adapter for each one and builds the `EvalCase`s.
+- `FakePipelineAdapter`: deterministic fake pipeline adapter for testing purposes. 
+questions → [runner] → EvalCases → [scorer] → MetricResults
+
+**Important: Separation of concerns** 
+
+The runner does not rank on purpose, it keeps responsibilities separated. 
+The CLI will orchestrate `runner → scorer → report`
