@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-import json
 import re
 
 from evalrag.judge.client import JudgeClient
+from evalrag.judge.parsing import VerdictParseError, extract_last_json_block
 from evalrag.judge.prompts import load_prompt
 from evalrag.types import EvalCase, MetricResult
 
@@ -11,12 +11,6 @@ METRIC = "faithfulness"
 
 # Splits on sentence-ending punctuation followed by whitespace.
 _SENTENCE_SPLIT = re.compile(r"(?<=[.!?])\s+")
-# Finds the LAST fenced ```json ... ``` block (greedy-from-end via finditer).
-_JSON_BLOCK = re.compile(r"```(?:json)?\s*(\{.*?\}|\[.*?\])\s*```", re.DOTALL)
-
-
-class VerdictParseError(ValueError):
-    """Raised when the judge's output has no parseable verdict block."""
 
 
 def decompose_claims(answer: str) -> list[str]:
@@ -33,23 +27,13 @@ def decompose_claims(answer: str) -> list[str]:
 
 
 def parse_verdict(raw: str) -> list[bool]:
-    """Extract per-claim supported booleans from the judge's raw output.
-
-    Expects the LAST fenced JSON block to contain:
-        {"claims": [{"index": 0, "supported": true}, ...]}
-    Returns booleans ordered by 'index'. Raises VerdictParseError if no block
-    is found or is malformed.
-    """
-    matches = list(_JSON_BLOCK.finditer(raw))
-    if not matches:
-        raise VerdictParseError("no JSON verdict block found in judge output")
-    blob = matches[-1].group(1)
+    """Extract per-claim supported booleans, ordered by 'index'."""
+    data = extract_last_json_block(raw)
     try:
-        data = json.loads(blob)
         claims = data["claims"]
         ordered = sorted(claims, key=lambda c: c["index"])
         return [bool(c["supported"]) for c in ordered]
-    except (json.JSONDecodeError, KeyError, TypeError) as e:
+    except (KeyError, TypeError) as e:
         raise VerdictParseError(f"malformed verdict block: {e}") from e
 
 

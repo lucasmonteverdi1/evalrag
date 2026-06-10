@@ -33,6 +33,16 @@ This way, tests are free, fast and consistent.
 **Labels:** on each stub, we type by hand the "truth" (which phrases are backed and which ones are not), 
 and from there we generate what the fake judge should answer. This way, they are never out of sync.
 
+## Answer relevance
+"Does the response actually answer the question?". 
+
+Questions can be faithful to the documents, but not really answer what was asked. 
+
+Instead of yes/no, the judge returns a score between 0-1 with an evaluation rubric:
+- 1.0 = fully answers 
+- 0.5 = partially answers 
+- 0.0 = out of topic 
+
 ## Validation
 A relevant concept is confusion here. The `confusion()` method takes 2 arguments, which are lists of booleans.
 The first list corresponds to the human verdicts, and the second one to the judge's verdicts on whether each claim is supported or not.
