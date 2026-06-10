@@ -41,7 +41,31 @@ Questions can be faithful to the documents, but not really answer what was asked
 Instead of yes/no, the judge returns a score between 0-1 with an evaluation rubric:
 - 1.0 = fully answers 
 - 0.5 = partially answers 
-- 0.0 = out of topic 
+- 0.0 = out of topic
+
+## Context precision
+"From the retrieved chunks, how many were relevant? Are the relevant ones on top?"
+
+**Measures the retriever:** how well it ranked the chunks when fetching them.
+
+### Relevant concepts
+- **Precision at k:** Precision at retrieving the information. Out of what was retrieved, what was relevant.
+  - Looking at the first "k" results (k = # chunks the retriever fetched), what fraction was relevant.
+  - **Example:** the retriever fetches 4 chunks, out of which 2 are relevant: `precision@4 = 2/4 = 0.5`
+  - Measures "noise": if 10 chunks are retrieved and only 1 is relevant, `precision = 0.1` (too noisy). 
+  - **Does not care about order, just proportion of relevant chunks.**
+- **MRR (Mean Reciprocal Rank):** Measures how high up the first relevant chunk is. 
+  - `mrr = 1 / (posicion of the first relevant chunk)`
+    - relevant at pos 1 → 1/1 = 1.0   (excellent, the most relevant first)
+    - relevant at pos 2 → 1/2 = 0.5 
+    - relevant at pos 4 → 1/4 = 0.25  (the relevant chunk was buried under)
+  - Important because the RAG generator del RAG usually pays more attention to the first chunks. 
+- **The final score is the combination of both metrics (average).**
+
+### Deterministic path
+**Only** metric that may not call the LLM. The `source_chunk_id` is set by the `generator`. 
+When it generates a question, we know which chunk the question came from → `source_chunk_id`.
+
 
 ## Validation
 A relevant concept is confusion here. The `confusion()` method takes 2 arguments, which are lists of booleans.
