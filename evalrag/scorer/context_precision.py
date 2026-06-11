@@ -60,6 +60,14 @@ def score_context_precision(
     *,
     prompts_dir: str = "prompts",
 ) -> MetricResult:
+    """Score how well the retriever surfaced relevant chunks.
+
+    NOTE: despite the name, the score is a *hybrid* of two ranking signals, not raw
+    precision: it averages precision@k (how much of the retrieval was relevant) with
+    MRR (how high the first relevant chunk ranked). This rewards both low noise and
+    good ranking. Relevance comes from source_chunk_id when known (deterministic, no
+    LLM), else from a per-chunk judge.
+    """
     retrieved_ids = [chunk.id for chunk in case.retrieved_chunks]
 
     if case.source_chunk_id is not None:

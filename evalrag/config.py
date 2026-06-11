@@ -27,15 +27,35 @@ class ProviderConfig:
             raise ConfigError(f"{section}: missing required keys: {', '.join(missing)}")
         if not isinstance(data["temperature"], (int, float)):
             raise ConfigError(f"{section}: temperature must be a number")
+
+        base_url = str(data["base_url"])
+        if not base_url.startswith("https://"):
+            raise ConfigError(f"{section}: base_url must start with https://")
+
+        temperature = float(data["temperature"])
+        if not 0.0 <= temperature <= 2.0:
+            raise ConfigError(f"{section}: temperature must be in [0, 2], got {temperature}")
+
+        # Positive-integer fields: catch zero/negative configs at load time.
+        ints = {
+            "max_tokens": int(data["max_tokens"]),
+            "timeout_seconds": int(data.get("timeout_seconds", 30)),
+            "max_retries": int(data.get("max_retries", 3)),
+        }
+        for name, value in ints.items():
+            floor = 0 if name == "max_retries" else 1
+            if value < floor:
+                raise ConfigError(f"{section}: {name} must be >= {floor}, got {value}")
+
         return cls(
-            provider=data["provider"],
-            base_url=data["base_url"],
-            api_key_env=data["api_key_env"],
-            model=data["model"],
-            temperature=float(data["temperature"]),
-            max_tokens=int(data["max_tokens"]),
-            timeout_seconds=int(data.get("timeout_seconds", 30)),
-            max_retries=int(data.get("max_retries", 3)),
+            provider=str(data["provider"]),
+            base_url=base_url,
+            api_key_env=str(data["api_key_env"]),
+            model=str(data["model"]),
+            temperature=temperature,
+            max_tokens=ints["max_tokens"],
+            timeout_seconds=ints["timeout_seconds"],
+            max_retries=ints["max_retries"],
         )
 
 

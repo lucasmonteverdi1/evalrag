@@ -27,7 +27,12 @@ class ResponseCache:
         path = self._path(key)
         if not path.is_file():
             return None
-        return json.loads(path.read_text())["response"]
+        try:
+            return json.loads(path.read_text())["response"]
+        except (json.JSONDecodeError, KeyError, OSError):
+            # Treat a truncated/corrupted/hand-edited cache file as a miss so the
+            # caller re-generates and overwrites it, rather than crashing the run.
+            return None
 
     def set(self, key: str, response: str, *, meta: dict | None = None) -> None:
         if not self.enabled:

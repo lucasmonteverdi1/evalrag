@@ -112,6 +112,39 @@ class TestValidation:
                 section="judge",
             )
 
+    def _valid(self, **overrides):
+        data = {
+            "provider": "openrouter",
+            "base_url": "https://x",
+            "api_key_env": "K",
+            "model": "m",
+            "temperature": 0,
+            "max_tokens": 10,
+        }
+        data.update(overrides)
+        return data
+
+    def test_bad_base_url_raises(self):
+        with pytest.raises(ConfigError, match="base_url must start with"):
+            ProviderConfig.from_dict(self._valid(base_url="ftp://x"), section="judge")
+
+    def test_temperature_out_of_range_raises(self):
+        with pytest.raises(ConfigError, match=r"temperature must be in \[0, 2\]"):
+            ProviderConfig.from_dict(self._valid(temperature=3.0), section="judge")
+
+    def test_zero_max_tokens_raises(self):
+        with pytest.raises(ConfigError, match="max_tokens must be >= 1"):
+            ProviderConfig.from_dict(self._valid(max_tokens=0), section="judge")
+
+    def test_negative_timeout_raises(self):
+        with pytest.raises(ConfigError, match="timeout_seconds must be >= 1"):
+            ProviderConfig.from_dict(self._valid(timeout_seconds=-5), section="judge")
+
+    def test_zero_max_retries_allowed(self):
+        # max_retries == 0 is valid (no retries); floor is 0, not 1.
+        cfg = ProviderConfig.from_dict(self._valid(max_retries=0), section="judge")
+        assert cfg.max_retries == 0
+
 
 class TestOverridesPrecedence:
     def test_override_beats_yaml(self, tmp_path):

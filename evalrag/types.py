@@ -29,7 +29,10 @@ class EvalCase:
     source_chunk_id: str | None = None
 
     def __post_init__(self) -> None:
-        # Coerce a plain list to tuple so callers don't have to care.
+        # Coerce a plain list to tuple so callers don't have to care. This is the one
+        # mutation allowed on this frozen dataclass: object.__setattr__ bypasses the
+        # frozen guard *during construction only* (the standard idiom for normalizing a
+        # field in a frozen dataclass). The instance is immutable once __init__ returns.
         if isinstance(self.retrieved_chunks, list):
             object.__setattr__(self, "retrieved_chunks", tuple(self.retrieved_chunks))
 

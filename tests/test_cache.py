@@ -52,6 +52,19 @@ class TestGetSet:
         assert record["response"] == "verbatim\nmultiline"
         assert record["meta"] == {"model": "x"}
 
+    def test_corrupt_file_treated_as_miss(self, tmp_path):
+        # A truncated/hand-edited cache file must not crash the run.
+        cache = ResponseCache(enabled=True, cache_dir=tmp_path)
+        key = ResponseCache.make_key(**KEY_ARGS)
+        (tmp_path / f"{key}.json").write_text("{ this is not valid json")
+        assert cache.get(key) is None
+
+    def test_missing_response_field_treated_as_miss(self, tmp_path):
+        cache = ResponseCache(enabled=True, cache_dir=tmp_path)
+        key = ResponseCache.make_key(**KEY_ARGS)
+        (tmp_path / f"{key}.json").write_text('{"meta": {}}')  # no "response" key
+        assert cache.get(key) is None
+
     def test_disabled_get_always_none(self, tmp_path):
         cache = ResponseCache(enabled=False, cache_dir=tmp_path)
         key = ResponseCache.make_key(**KEY_ARGS)
