@@ -2,7 +2,7 @@ import pytest
 
 from evalrag.config import ProviderConfig
 from evalrag.judge.cache import ResponseCache
-from evalrag.judge.client import JudgeClient
+from evalrag.judge.llm_client import LLMClient
 from evalrag.judge.parsing import VerdictParseError
 from evalrag.judge.provider import FakeProvider
 from evalrag.scorer.context_precision import (
@@ -61,8 +61,8 @@ class TestDeterministicPath:
         assert "deterministic" in result.rationale
 
 
-def make_judge(tmp_path, responses) -> JudgeClient:
-    return JudgeClient(
+def make_judge(tmp_path, responses) -> LLMClient:
+    return LLMClient(
         provider=FakeProvider(
             responses=responses, default='```json\n{"chunks": []}\n```'
         ),

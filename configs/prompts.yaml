@@ -8,6 +8,9 @@ faithfulness: v1
 answer_relevance: v1
 context_precision: v1
 
+# Synthetic data generation (used by the generator, not a metric)
+generation: v1
+
 # Optional metrics (uncomment when implemented)
 # answer_correctness: v1
 # context_recall: v1

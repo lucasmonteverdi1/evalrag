@@ -13,7 +13,7 @@ class JudgeResult:
     cached: bool
 
 
-class JudgeClient:
+class LLMClient:
     def __init__(
         self,
         provider: LLMProvider,

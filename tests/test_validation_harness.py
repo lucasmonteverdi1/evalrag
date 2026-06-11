@@ -2,7 +2,7 @@ import pytest
 
 from evalrag.config import ProviderConfig
 from evalrag.judge.cache import ResponseCache
-from evalrag.judge.client import JudgeClient
+from evalrag.judge.llm_client import LLMClient
 from evalrag.judge.provider import FakeProvider
 from evalrag.scorer.faithfulness import decompose_claims
 from evalrag.validation.agreement import Confusion
@@ -14,8 +14,8 @@ from evalrag.validation.harness import (
 from testdata.faithfulness_stubs import FAKE_RESPONSES, STUBS
 
 
-def make_judge(tmp_path, responses) -> JudgeClient:
-    return JudgeClient(
+def make_judge(tmp_path, responses) -> LLMClient:
+    return LLMClient(
         provider=FakeProvider(responses=responses, default='```json\n{"claims": []}\n```'),
         config=ProviderConfig(
             provider="fake",

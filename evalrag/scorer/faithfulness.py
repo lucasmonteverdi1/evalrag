@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 
-from evalrag.judge.client import JudgeClient
+from evalrag.judge.llm_client import LLMClient
 from evalrag.judge.parsing import VerdictParseError, extract_last_json_block
 from evalrag.judge.prompts import load_prompt
 from evalrag.types import EvalCase, MetricResult
@@ -47,7 +47,7 @@ def _render_prompt(template: str, claims: list[str], case: EvalCase) -> str:
 
 def judge_claims(
     case: EvalCase,
-    judge: JudgeClient,
+    judge: LLMClient,
     *,
     prompts_dir: str = "prompts",
 ) -> tuple[list[str], list[bool], str | None]:
@@ -78,7 +78,7 @@ def judge_claims(
 
 def score_faithfulness(
     case: EvalCase,
-    judge: JudgeClient,
+    judge: LLMClient,
     *,
     prompts_dir: str = "prompts",
 ) -> MetricResult:

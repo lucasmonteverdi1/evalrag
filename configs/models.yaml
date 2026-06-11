@@ -8,8 +8,10 @@ judge:
   timeout_seconds: 30
   max_retries: 3
 
-# The pipeline-under-test generator model (set when running evaluations).
-pipeline_generator:
+# The system under test: the RAG pipeline's answer-generating model — the one being
+# evaluated. MUST differ from the judge (self-preference bias). Not to be confused with
+# evalrag/generator/, which synthesizes evaluation questions.
+system_under_test:
   provider: openrouter
   base_url: https://openrouter.ai/api/v1
   api_key_env: OPENROUTER_API_KEY

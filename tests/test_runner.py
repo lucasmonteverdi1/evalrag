@@ -1,5 +1,5 @@
 from evalrag.judge.cache import ResponseCache
-from evalrag.judge.client import JudgeClient
+from evalrag.judge.llm_client import LLMClient
 from evalrag.judge.provider import FakeProvider
 from evalrag.config import ProviderConfig
 from evalrag.runner.adapter import FakePipelineAdapter
@@ -79,7 +79,7 @@ class TestGlueWithScorer:
         case = result.cases[0]
 
         verdict = '```json\n{"claims": [{"index": 0, "supported": true}]}\n```'
-        judge = JudgeClient(
+        judge = LLMClient(
             provider=FakeProvider(responses={"Paris": verdict}),
             config=ProviderConfig(
                 provider="fake",

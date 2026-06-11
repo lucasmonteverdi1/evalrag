@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from evalrag.judge.client import JudgeClient
+from evalrag.judge.llm_client import LLMClient
 from evalrag.judge.parsing import VerdictParseError, extract_last_json_block
 from evalrag.judge.prompts import load_prompt
 from evalrag.types import EvalCase, MetricResult
@@ -30,7 +30,7 @@ def _render_prompt(template: str, case: EvalCase) -> str:
 
 def score_answer_relevance(
     case: EvalCase,
-    judge: JudgeClient,
+    judge: LLMClient,
     *,
     prompts_dir: str = "prompts",
 ) -> MetricResult:

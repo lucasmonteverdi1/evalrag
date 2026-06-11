@@ -5,7 +5,28 @@ This project is a tool that measures if a RAG system answers correctly.
 **RAG system flow:** question → get relevant documents (chunks) → generate answer.
 
 What this project aims to determine if that generated answer is **reliable**, initially measured
-by 3 metrics: faithfulness, 
+by 3 metrics: faithfulness, answer relevance and context precision. 
+
+There are **3 models involved** in this process: 
+- The questions generator, inventing synthetic questions from the docs.
+- The pipeline generator (the model/system under evaluation), answering the questions. "Lives" behind the PipelineAdapter.
+- The judge model, scoring the answers given by the user's model. 
+
+**LLMClient:** Generic pipeline that knows how to interact with an LLM: 
+- applies temp 0 
+- caches responses 
+- captures raw responses. 
+
+We want those 3 things also when generating questions (reproducibility). 
+
+## Generator
+Generates synthetic questions from documents, registering the chunk it came from (`source_chunk_id`).
+
+Start of the data pipeline. It takes chunks (documents), and for each one it asks the LLM for a question + expected answer.
+It emits `EvalInput`s, the same structure the runner ya consumes.
+
+### Flow
+`documents → [generator] → EvalInputs → [runner] → EvalCases → [scorers] → MetricResults`
 
 ## Faithfulness
 "Is everything that the answer claims backed by the documents, or did the model invent anything?"
@@ -132,3 +153,54 @@ questions → [runner] → EvalCases → [scorer] → MetricResults
 
 The runner does not rank on purpose, it keeps responsibilities separated. 
 The CLI will orchestrate `runner → scorer → report`
+
+## System flow — how the components interact
+
+```
+                    ┌─────────────┐
+   documents ──────▶│  generator  │  LLM writes (question, expected_answer)
+   (chunks)         │ synthesize  │  per chunk; records source_chunk_id
+                    └──────┬──────┘
+                           │ list[EvalInput]
+                           │ (question + ground truth)
+                           ▼
+   user's pipeline   ┌─────────────┐
+   (black box) ─────▶│   runner    │  drives PipelineAdapter.run(question)
+   PipelineAdapter   │ run_pipeline│  → (chunks, answer); collect-and-continue
+                     └──────┬──────┘
+                            │ RunResult: list[EvalCase] (+ errors)
+                            ▼
+                     ┌─────────────────────────────────┐
+                     │            scorers              │  each reads DIFFERENT inputs
+                     │  ┌───────────────────────────┐  │
+   EvalCase ────────▶│  │ faithfulness   answer + chunks      │
+                     │  │ answer_relevance answer + question  │
+                     │  │ context_precision chunks + src_id   │
+                     │  └─────────────┬─────────────┘  │
+                     └────────────────┼────────────────┘
+                                      │ uses
+                          ┌───────────▼───────────┐
+                          │      JudgeClient      │  temp 0, cache, raw capture
+                          │  ┌─────────────────┐  │  (context_precision may SKIP
+                          │  │  LLMProvider    │  │   it via the deterministic path)
+                          │  │ Fake/OpenRouter │  │
+                          │  └─────────────────┘  │
+                          └───────────────────────┘
+                                      │ list[MetricResult]
+                                      ▼
+                               ┌─────────────┐
+                               │   report    │  aggregate → JSON + HTML
+                               │  (step 5D)  │  thresholds → exit code (CLI, 5E)
+                               └─────────────┘
+
+   ── Offline, separate track (does NOT affect a run's exit code) ──
+   hand-labeled stubs ──▶ validation ──▶ agreement %, F1, Cohen's kappa
+                          (calibrates whether the JUDGE itself is trustworthy)
+```
+
+**Reading it:** the `generator` and the `runner` are two ways to get `EvalCase`s
+(synthetic vs. real pipeline). Every scorer consumes an `EvalCase` but reads *different
+fields* of it, and leans on the shared `JudgeClient` — except context precision's
+deterministic path, which skips the LLM. The `report` aggregates the `MetricResult`s and
+(via the CLI) gates on thresholds. `validation` is a separate offline track that grades
+the judge, not the pipeline.

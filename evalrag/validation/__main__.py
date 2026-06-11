@@ -9,7 +9,7 @@ from evalrag.config import (
     resolve_api_key,
 )
 from evalrag.judge.cache import ResponseCache
-from evalrag.judge.client import JudgeClient
+from evalrag.judge.llm_client import LLMClient
 from evalrag.judge.openrouter_provider import OpenRouterProvider
 from evalrag.validation.harness import AgreementReport, validate_faithfulness
 from testdata.faithfulness_stubs import STUBS
@@ -43,7 +43,7 @@ def main() -> int:
         base_url=models.judge.base_url,
         max_retries=models.judge.max_retries,
     )
-    judge = JudgeClient(
+    judge = LLMClient(
         provider=provider,
         config=models.judge,
         cache=ResponseCache(enabled=models.cache.enabled, cache_dir=models.cache.dir),

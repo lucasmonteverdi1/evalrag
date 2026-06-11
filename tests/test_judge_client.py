@@ -2,7 +2,7 @@ import pytest
 
 from evalrag.config import ProviderConfig
 from evalrag.judge.cache import ResponseCache
-from evalrag.judge.client import JudgeClient, JudgeResult
+from evalrag.judge.llm_client import LLMClient, JudgeResult
 from evalrag.judge.provider import FakeProvider
 
 
@@ -21,8 +21,8 @@ def make_config(**overrides) -> ProviderConfig:
     return ProviderConfig(**base)
 
 
-def make_client(tmp_path, provider, *, enabled=True, versions=None) -> JudgeClient:
-    return JudgeClient(
+def make_client(tmp_path, provider, *, enabled=True, versions=None) -> LLMClient:
+    return LLMClient(
         provider=provider,
         config=make_config(),
         cache=ResponseCache(enabled=enabled, cache_dir=tmp_path),

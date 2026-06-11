@@ -1,7 +1,7 @@
 import pytest
 
 from evalrag.judge.cache import ResponseCache
-from evalrag.judge.client import JudgeClient
+from evalrag.judge.llm_client import LLMClient
 from evalrag.judge.provider import FakeProvider
 from evalrag.config import ProviderConfig
 from evalrag.scorer.faithfulness import (
@@ -79,8 +79,8 @@ class TestParseVerdict:
 # --------------------------------------------------------------------------- #
 # score_faithfulness (end-to-end with FakeProvider)                           #
 # --------------------------------------------------------------------------- #
-def make_judge(tmp_path, responses, *, default="") -> JudgeClient:
-    return JudgeClient(
+def make_judge(tmp_path, responses, *, default="") -> LLMClient:
+    return LLMClient(
         provider=FakeProvider(responses=responses, default=default),
         config=ProviderConfig(
             provider="fake",

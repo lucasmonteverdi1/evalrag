@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from evalrag.judge.client import JudgeClient
+from evalrag.judge.llm_client import LLMClient
 from evalrag.scorer.faithfulness import judge_claims
 from evalrag.validation.agreement import (
     Confusion,
@@ -37,7 +37,7 @@ class AgreementReport:
 
 def collect_pairs(
     stubs: list[MetricStub[list[bool]]],
-    judge: JudgeClient,
+    judge: LLMClient,
     *,
     prompts_dir: str = "prompts",
 ) -> tuple[list[bool], list[bool], list[StubAgreement]]:
@@ -75,7 +75,7 @@ def collect_pairs(
 
 def validate_faithfulness(
     stubs: list[MetricStub[list[bool]]],
-    judge: JudgeClient,
+    judge: LLMClient,
     *,
     prompts_dir: str = "prompts",
 ) -> AgreementReport:

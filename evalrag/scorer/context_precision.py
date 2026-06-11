@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from evalrag.judge.client import JudgeClient
+from evalrag.judge.llm_client import LLMClient
 from evalrag.judge.parsing import VerdictParseError, extract_last_json_block
 from evalrag.judge.prompts import load_prompt
 from evalrag.types import EvalCase, MetricResult
@@ -28,7 +28,7 @@ def mrr(retrieved_ids: list[str], relevant_ids: set[str]) -> float:
 
 
 def _relevance_from_judge(
-    case: EvalCase, judge: JudgeClient, prompts_dir: str
+    case: EvalCase, judge: LLMClient, prompts_dir: str
 ) -> tuple[list[bool], str]:
     """Ask the judge to label each retrieved chunk relevant. Returns (verdicts, raw)."""
     version = judge.version_for(METRIC)
@@ -56,7 +56,7 @@ def _relevance_from_judge(
 
 def score_context_precision(
     case: EvalCase,
-    judge: JudgeClient | None = None,
+    judge: LLMClient | None = None,
     *,
     prompts_dir: str = "prompts",
 ) -> MetricResult:

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from evalrag.judge.cache import ResponseCache
-from evalrag.judge.client import JudgeClient
+from evalrag.judge.llm_client import LLMClient
 from evalrag.judge.provider import FakeProvider
 from evalrag.config import ProviderConfig
 from evalrag.scorer.faithfulness import score_faithfulness
@@ -18,7 +18,7 @@ def main() -> None:
         temperature=0,
         max_tokens=1024,
     )
-    judge = JudgeClient(
+    judge = LLMClient(
         provider=provider,
         config=config,
         cache=ResponseCache(enabled=False, cache_dir=".cache/demo"),

@@ -55,18 +55,18 @@ class CacheConfig:
 @dataclass(frozen=True)
 class ModelsConfig:
     judge: ProviderConfig
-    pipeline_generator: ProviderConfig
+    system_under_test: ProviderConfig
     cache: CacheConfig
 
     @classmethod
     def from_dict(cls, data: dict) -> "ModelsConfig":
-        for key in ("judge", "pipeline_generator"):
+        for key in ("judge", "system_under_test"):
             if key not in data:
                 raise ConfigError(f"models config: missing required section '{key}'")
         return cls(
             judge=ProviderConfig.from_dict(data["judge"], section="judge"),
-            pipeline_generator=ProviderConfig.from_dict(
-                data["pipeline_generator"], section="pipeline_generator"
+            system_under_test=ProviderConfig.from_dict(
+                data["system_under_test"], section="system_under_test"
             ),
             cache=CacheConfig.from_dict(data.get("cache", {})),
         )
@@ -103,14 +103,15 @@ def resolve_api_key(cfg: ProviderConfig) -> str:
     return key
 
 
-def judge_matches_generator(cfg: ModelsConfig) -> bool:
-    """True when judge and pipeline generator are the same model on the same endpoint.
+def judge_matches_sut(cfg: ModelsConfig) -> bool:
+    """True when the judge and the system-under-test use the same model + endpoint.
 
-    The CLI uses this to warn about self-preference bias.
+    The CLI uses this to warn about self-preference bias (a judge tends to inflate
+    scores for answers produced by its own model).
     """
     return (
-        cfg.judge.model == cfg.pipeline_generator.model
-        and cfg.judge.base_url == cfg.pipeline_generator.base_url
+        cfg.judge.model == cfg.system_under_test.model
+        and cfg.judge.base_url == cfg.system_under_test.base_url
     )
 
 

@@ -7,7 +7,7 @@ from evalrag.config import (
     ConfigError,
     ModelsConfig,
     ProviderConfig,
-    judge_matches_generator,
+    judge_matches_sut,
     load_models_config,
     load_prompt_versions,
     resolve_api_key,
@@ -24,7 +24,7 @@ VALID_MODELS_YAML = textwrap.dedent(
       max_tokens: 1024
       timeout_seconds: 30
       max_retries: 3
-    pipeline_generator:
+    system_under_test:
       provider: openrouter
       base_url: https://openrouter.ai/api/v1
       api_key_env: OPENROUTER_API_KEY
@@ -51,15 +51,15 @@ class TestLoadModelsConfig:
         assert cfg.judge.model == "google/gemini-2.5-flash"
         assert cfg.judge.temperature == 0.0
         assert cfg.judge.max_tokens == 1024
-        assert cfg.pipeline_generator.model == "openai/gpt-4o"
+        assert cfg.system_under_test.model == "openai/gpt-4o"
         assert cfg.cache.enabled is True
         assert cfg.cache.dir == ".cache/llm_responses"
 
     def test_defaults_applied(self, tmp_path):
-        # pipeline_generator omits timeout_seconds/max_retries -> defaults.
+        # system_under_test omits timeout_seconds/max_retries -> defaults.
         cfg = load_models_config(_write(tmp_path, VALID_MODELS_YAML))
-        assert cfg.pipeline_generator.timeout_seconds == 30
-        assert cfg.pipeline_generator.max_retries == 3
+        assert cfg.system_under_test.timeout_seconds == 30
+        assert cfg.system_under_test.max_retries == 3
 
     def test_cache_defaults_when_section_absent(self, tmp_path):
         text = VALID_MODELS_YAML.split("cache:")[0]  # drop the cache block
@@ -71,12 +71,12 @@ class TestLoadModelsConfig:
         cfg = load_models_config("configs/models.yaml")
         assert cfg.judge.base_url
         assert cfg.judge.api_key_env
-        assert cfg.pipeline_generator.model
+        assert cfg.system_under_test.model
 
 
 class TestValidation:
     def test_missing_section_raises(self, tmp_path):
-        # judge present but pipeline_generator absent.
+        # judge present but system_under_test absent.
         text = textwrap.dedent(
             """
             judge:
@@ -88,7 +88,7 @@ class TestValidation:
               max_tokens: 10
             """
         )
-        with pytest.raises(ConfigError, match="pipeline_generator"):
+        with pytest.raises(ConfigError, match="system_under_test"):
             load_models_config(_write(tmp_path, text))
 
     def test_missing_required_key_raises(self):
@@ -169,19 +169,19 @@ class TestJudgeMatchesGenerator:
 
         return ModelsConfig(
             judge=mk(judge_model, judge_url),
-            pipeline_generator=mk(gen_model, gen_url),
+            system_under_test=mk(gen_model, gen_url),
             cache=CacheConfig(),
         )
 
     def test_true_when_same_model_and_url(self):
-        assert judge_matches_generator(self._cfg("m", "m")) is True
+        assert judge_matches_sut(self._cfg("m", "m")) is True
 
     def test_false_when_different_model(self):
-        assert judge_matches_generator(self._cfg("judge-m", "gen-m")) is False
+        assert judge_matches_sut(self._cfg("judge-m", "gen-m")) is False
 
     def test_false_when_same_model_different_url(self):
         cfg = self._cfg("m", "m", judge_url="https://a", gen_url="https://b")
-        assert judge_matches_generator(cfg) is False
+        assert judge_matches_sut(cfg) is False
 
 
 class TestLoadPromptVersions:
