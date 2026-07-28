@@ -39,7 +39,7 @@ def collect_pairs(
     stubs: list[MetricStub[list[bool]]],
     judge: LLMClient,
     *,
-    prompts_dir: str = "prompts",
+    prompts_dir: str | None = None,
 ) -> tuple[list[bool], list[bool], list[StubAgreement]]:
     """Run the judge over each stub and align its per-claim verdicts with the
     human labels.
@@ -77,7 +77,7 @@ def validate_faithfulness(
     stubs: list[MetricStub[list[bool]]],
     judge: LLMClient,
     *,
-    prompts_dir: str = "prompts",
+    prompts_dir: str | None = None,
 ) -> AgreementReport:
     """Compute the per-claim agreement report for the faithfulness judge over
     the given hand-labeled stubs."""

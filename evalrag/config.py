@@ -4,6 +4,22 @@ from dataclasses import dataclass
 from pathlib import Path
 import yaml
 
+# Configs bundled in the package, used as a fallback when the CWD has none (e.g. a
+# pip-installed evalrag). A ./configs/ in the working directory still wins.
+_BUNDLED_CONFIGS = Path(__file__).resolve().parent / "configs"
+
+
+def _resolve_config(path: str | Path, name: str) -> Path:
+    """Prefer the caller's path; if it's the default and missing, use the bundled copy."""
+    p = Path(path)
+    if p.is_file():
+        return p
+    bundled = _BUNDLED_CONFIGS / name
+    if bundled.is_file():
+        return bundled
+    return p  # let the caller's open() raise a clear FileNotFoundError
+
+
 class ConfigError(ValueError):
     """Raised when a config file is missing required keys or has bad values."""
 
@@ -109,7 +125,7 @@ def load_models_config(
     *,
     overrides: dict | None = None,
 ) -> ModelsConfig:
-    raw = yaml.safe_load(Path(path).read_text()) or {}
+    raw = yaml.safe_load(_resolve_config(path, "models.yaml").read_text()) or {}
     merged = _deep_merge(raw, overrides)   # precedence: CLI(overrides) > YAML
     return ModelsConfig.from_dict(merged)
 
@@ -136,5 +152,5 @@ def judge_matches_sut(cfg: ModelsConfig) -> bool:
 
 
 def load_prompt_versions(path: str | Path = "configs/prompts.yaml") -> dict[str, str]:
-    raw = yaml.safe_load(Path(path).read_text()) or {}
+    raw = yaml.safe_load(_resolve_config(path, "prompts.yaml").read_text()) or {}
     return {str(k): str(v) for k, v in raw.items()}

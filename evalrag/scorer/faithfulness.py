@@ -49,7 +49,7 @@ def judge_claims(
     case: EvalCase,
     judge: LLMClient,
     *,
-    prompts_dir: str = "prompts",
+    prompts_dir: str | None = None,
 ) -> tuple[list[str], list[bool], str | None]:
     """Decompose the answer, ask the judge, and return (claims, verdicts, raw_output).
 
@@ -80,7 +80,7 @@ def score_faithfulness(
     case: EvalCase,
     judge: LLMClient,
     *,
-    prompts_dir: str = "prompts",
+    prompts_dir: str | None = None,
 ) -> MetricResult:
     claims, verdicts, raw_output = judge_claims(case, judge, prompts_dir=prompts_dir)
 

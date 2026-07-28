@@ -19,6 +19,12 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["evalrag"]
+# Ship the default configs so a pip-installed evalrag has sane defaults to copy/point at.
+force-include = { "configs" = "evalrag/configs" }
+
+[tool.hatch.build]
+# prompts live inside evalrag/ so they're included automatically; be explicit for sdist.
+include = ["evalrag/**", "configs/**", "README.md", "LICENSE"]
 
 [dependency-groups]
 dev = [

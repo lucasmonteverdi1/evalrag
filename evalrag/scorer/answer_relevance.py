@@ -32,7 +32,7 @@ def score_answer_relevance(
     case: EvalCase,
     judge: LLMClient,
     *,
-    prompts_dir: str = "prompts",
+    prompts_dir: str | None = None,
 ) -> MetricResult:
     version = judge.version_for(METRIC)
     template = load_prompt(METRIC, version, prompts_dir=prompts_dir)

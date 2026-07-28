@@ -58,7 +58,7 @@ def score_context_precision(
     case: EvalCase,
     judge: LLMClient | None = None,
     *,
-    prompts_dir: str = "prompts",
+    prompts_dir: str | None = None,
 ) -> MetricResult:
     """Score how well the retriever surfaced relevant chunks.
 

@@ -28,7 +28,7 @@ def generate_for_chunk(
     generator: LLMClient,
     *,
     n: int,
-    prompts_dir: str = "prompts",
+    prompts_dir: str | None = None,
 ) -> list[EvalInput]:
     """Generate n synthetic EvalInputs grounded in a single chunk.
 
@@ -57,7 +57,7 @@ def generate_inputs(
     generator: LLMClient,
     *,
     n_per_chunk: int = 1,
-    prompts_dir: str = "prompts",
+    prompts_dir: str | None = None,
 ) -> list[EvalInput]:
     """Generate synthetic EvalInputs across a set of source chunks."""
     inputs: list[EvalInput] = []
