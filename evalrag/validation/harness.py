@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import sys
 from dataclasses import dataclass
 
 from evalrag.judge.llm_client import LLMClient
+from evalrag.judge.parsing import VerdictParseError
 from evalrag.scorer.faithfulness import judge_claims
 from evalrag.validation.agreement import (
     Confusion,
@@ -54,12 +56,19 @@ def collect_pairs(
     per_stub: list[StubAgreement] = []
 
     for stub in stubs:
-        _claims, verdicts, _raw = judge_claims(stub.case, judge, prompts_dir=prompts_dir)
+        try:
+            _claims, verdicts, _raw = judge_claims(stub.case, judge, prompts_dir=prompts_dir)
+        except VerdictParseError as e:
+            # A single unparseable judge reply must not sink the whole validation run.
+            print(f"skipping stub {stub.case.question!r}: {e}", file=sys.stderr)
+            continue
         if len(stub.label) != len(verdicts):
-            raise ValueError(
-                f"stub {stub.case.question!r}: {len(stub.label)} human labels "
-                f"but judge produced {len(verdicts)} verdicts"
+            print(
+                f"skipping stub {stub.case.question!r}: {len(stub.label)} human labels "
+                f"but judge produced {len(verdicts)} verdicts",
+                file=sys.stderr,
             )
+            continue
         human_all.extend(stub.label)
         judge_all.extend(verdicts)
         per_stub.append(

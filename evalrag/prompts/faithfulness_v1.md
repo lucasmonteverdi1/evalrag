@@ -29,4 +29,5 @@ Then output your final verdict as a single fenced JSON block with the shape belo
     ```
 
 The JSON block MUST be the last thing in your response and MUST contain exactly one
-entry per claim above.
+entry per claim above. Always emit the fenced ```json block, even when there is only
+one claim — never state the verdict in prose alone.

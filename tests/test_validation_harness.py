@@ -1,4 +1,3 @@
-import pytest
 
 from evalrag.config import ProviderConfig
 from evalrag.judge.cache import ResponseCache
@@ -75,10 +74,17 @@ class TestCollectPairs:
         assert len(human) == len(judge_labels) == total_claims()
         assert len(per_stub) == len(STUBS)
 
-    def test_raises_on_label_count_drift(self, tmp_path):
-        # A judge that returns a fixed 1-claim verdict will mismatch multi-claim stubs.
-        bad = make_judge(tmp_path, {})  # default -> 0 claims for everything
-        # Use only a stub that actually has claims so the mismatch triggers.
+    def test_skips_stub_on_count_drift(self, tmp_path):
+        # A judge whose verdict count mismatches the labels: that stub is skipped
+        # (not crashed), so the run continues with the remaining stubs.
+        bad = make_judge(tmp_path, {})  # default -> 0 verdicts for everything
         multi = [s for s in STUBS if len(s.label) >= 1][:1]
-        with pytest.raises((ValueError,)):
-            collect_pairs(multi, bad)
+        human, judge_labels, per_stub = collect_pairs(multi, bad)
+        assert per_stub == []  # the drifting stub was dropped, no exception
+
+    def test_unparseable_reply_skips_not_crashes(self, tmp_path):
+        # The real-world case: judge answers in prose, no JSON. Skip that stub.
+        prose = make_judge(tmp_path, {"__none__": "x"})  # default has no JSON block
+        prose.provider.default = "The verdict is: true (no JSON here)."
+        human, judge_labels, per_stub = collect_pairs(STUBS[:1], prose)
+        assert per_stub == []

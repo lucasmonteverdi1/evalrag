@@ -87,6 +87,44 @@ echo '[{"question":"What is the capital of France?"}]' > q.json
 evalrag --adapter evalrag.demo_adapter:demo_adapter --inputs q.json
 ```
 
+## Reading the reports
+
+Each run writes two files to `--out-dir`:
+
+**`report.html`** — open in a browser. Top section is a **per-metric score table** plus
+an *overall* number (informational only — gating is per-metric, not on the overall).
+Below that, each evaluated case shows its question, the pipeline's answer, and every
+metric's score + rationale. Expand **"raw judge output"** on any metric to see the
+judge's verbatim reasoning — this is the traceability guarantee: no score is a black box.
+
+**`report.json`** — the same data, machine-readable, for dashboards or diffing across
+runs:
+
+```jsonc
+{
+  "summary": {
+    "n_cases": 2,
+    "per_metric": { "faithfulness": 1.0, "answer_relevance": 1.0, "context_precision": 1.0 },
+    "overall": 1.0            // informational, NOT used for gating
+  },
+  "cases": [
+    {
+      "question": "...",
+      "generated_answer": "...",
+      "metrics": [
+        { "metric": "faithfulness", "score": 1.0, "rationale": "1/1 claims grounded",
+          "raw_judge_output": "..." }   // the judge's full response, kept verbatim
+      ]
+    }
+  ]
+}
+```
+
+**How to read the numbers:** each metric is 0.0–1.0, higher is better. A metric **fails**
+(and the run exits non-zero) when its mean score is below the threshold in
+`configs/thresholds.yaml`. The terminal prints a `[PASS]`/`[FAIL]` line per metric and a
+final `Result: PASS`/`FAIL`.
+
 ## Use in CI
 
 `evalrag`'s exit code gates the build:
@@ -117,6 +155,18 @@ result = score_faithfulness(eval_case, judge)   # -> MetricResult(score, rationa
   vars named here (`api_key_env`), never stored in YAML.
 - `configs/thresholds.yaml` — per-metric pass thresholds.
 - `configs/prompts.yaml` — pinned judge-prompt versions.
+
+## Troubleshooting
+
+**`ModuleNotFoundError: No module named 'evalrag.cli'` during local development.**
+Only affects the editable dev install (`uv sync`), never a `pip install` of the package.
+It happens if you mix `uv pip install/uninstall` with `uv sync`. Reset the environment:
+
+```bash
+rm -rf .venv && uv sync --all-groups
+```
+
+Then use `uv run evalrag ...`. (Don't mix `uv pip` and `uv sync` in the same venv.)
 
 ## Design
 
