@@ -6,6 +6,7 @@ on:
 
 permissions:
   contents: write  # needed to create the GitHub Release
+  id-token: write  # needed for PyPI Trusted Publishing (OIDC), no token stored
 
 jobs:
   release:
@@ -28,6 +29,11 @@ jobs:
 
       - name: Build wheel + sdist
         run: uv build
+
+      - name: Publish to PyPI
+        # Trusted Publishing: PyPI trusts this workflow via OIDC — no API token.
+        # Requires a one-time "trusted publisher" setup on pypi.org (see README).
+        run: uv publish
 
       - name: Create GitHub Release
         env:

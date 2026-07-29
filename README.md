@@ -73,6 +73,9 @@ This runs your pipeline over each question, scores all three metrics, writes
 `eval-out/report.json` + `eval-out/report.html`, and exits **0** if every metric is at
 or above its threshold, **1** if any falls below, **2** on a config/usage error.
 
+> **Note:** `--adapter` imports and runs the module you name, so only pass a spec you
+> trust (like `pytest --plugin`). Don't derive it from untrusted input.
+
 Don't have questions yet? Generate them from your documents instead of `--inputs`:
 
 ```bash

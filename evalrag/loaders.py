@@ -22,6 +22,10 @@ def load_adapter(spec: str) -> PipelineAdapter:
     The attribute may be an adapter instance or a zero-arg callable/class that
     returns one. This is the extensibility seam: the user plugs in their pipeline
     without evalrag knowing how it's built.
+
+    SECURITY: importing the module runs its top-level code, so `spec` must come from
+    a trusted source (a CLI operator or CI config), like `pytest --plugin` or
+    `gunicorn module:app`. Never pass an adapter spec derived from untrusted input.
     """
     if ":" not in spec:
         raise LoaderError(f"adapter spec must be 'module:attribute', got {spec!r}")
