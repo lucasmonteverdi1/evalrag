@@ -5,10 +5,21 @@ description = "A from-scratch CLI evaluation framework for RAG pipelines."
 readme = "README.md"
 requires-python = ">=3.11"
 license = { file = "LICENSE" }
+authors = [{ name = "Lucas Monteverdi" }]
+keywords = ["rag", "evaluation", "llm", "llm-as-judge", "retrieval"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
 dependencies = [
     "openai>=1.0",
     "pyyaml>=6.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/lucasmonteverdi1/evalrag"
+Repository = "https://github.com/lucasmonteverdi1/evalrag"
 
 [project.scripts]
 evalrag = "evalrag.cli:main"
