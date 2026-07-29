@@ -17,7 +17,10 @@ gate**.
 ## Install
 
 ```bash
-# From GitHub (no clone needed):
+# From PyPI (the import package is `evalrag`):
+pip install rag-scorer
+
+# Or straight from GitHub, no clone:
 pip install git+https://github.com/lucasmonteverdi1/evalrag.git
 
 # Or with uv, from a clone:

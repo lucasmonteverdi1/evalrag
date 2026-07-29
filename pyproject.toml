@@ -1,5 +1,7 @@
 [project]
-name = "evalrag"
+# PyPI distribution name (the import package stays `evalrag`); `evalrag` itself is
+# blocked on PyPI for being too similar to the existing `eval-rag`.
+name = "rag-scorer"
 version = "0.1.0"
 description = "A from-scratch CLI evaluation framework for RAG pipelines."
 readme = "README.md"
