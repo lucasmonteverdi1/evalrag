@@ -147,10 +147,14 @@ Thresholds live in `configs/thresholds.yaml` (override with `--thresholds-config
 
 ## Use as a library
 
-Every metric is importable and takes `(EvalCase, judge)`:
+Install with `pip install rag-scorer` — the import package is `evalrag`. Every metric is
+importable and takes `(EvalCase, judge)`:
 
 ```python
 from evalrag.scorer.faithfulness import score_faithfulness
+from evalrag.scorer.answer_relevance import score_answer_relevance
+from evalrag.scorer.context_precision import score_context_precision
+
 result = score_faithfulness(eval_case, judge)   # -> MetricResult(score, rationale, ...)
 ```
 

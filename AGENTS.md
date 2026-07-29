@@ -12,6 +12,12 @@ clean commit history, and tests matter as much as raw functionality. The whole p
 is to demonstrate AI-engineering depth beyond LLM API wrappers, so avoid magic and
 make every scoring decision explainable.
 
+**Status: v0.1.0 shipped** — all three MVP metrics, validation, runner, generator,
+report, and the threshold-gating CLI are done and tested (175 tests). Published to PyPI
+as `rag-scorer` (the import package stays `evalrag`; `evalrag` was taken on PyPI). A tag
+push runs `.github/workflows/release.yml`, which gates on ruff+pytest then builds and
+publishes via PyPI Trusted Publishing (OIDC, no token).
+
 ## Design goals (non-negotiable)
 
 - **No magic** — every score is traceable to an explicit, inspectable decision.
@@ -36,15 +42,19 @@ evalrag/
 │   ├── __init__.py
 │   ├── types.py             # EvalCase, MetricResult, Chunk (dataclasses)
 │   ├── config.py            # frozen config dataclasses loaded from configs/*.yaml
+│   ├── gating.py            # per-metric threshold pass/fail -> exit code
+│   ├── loaders.py           # load adapter (dotted path), inputs, docs, thresholds
+│   ├── demo_adapter.py      # bundled PipelineAdapter for trying the CLI with no code
 │   ├── generator/           # synthetic (question, expected_answer) generation
 │   ├── runner/              # pipeline adapter + execution loop
-│   ├── scorer/              # metric implementations (faithfulness.py done)
-│   ├── judge/               # LLM-as-judge client + versioned prompt loading
+│   ├── scorer/              # metric implementations + run_all (score all metrics)
+│   ├── judge/               # LLM client, parsing, cache, versioned prompt loading
 │   ├── validation/          # offline judge-validation harness
-│   ├── report/              # JSON + HTML rendering
+│   ├── report/              # aggregate + JSON/HTML rendering
+│   ├── prompts/             # versioned judge prompts (packaged; e.g. faithfulness_v1.md)
+│   ├── configs/             # default YAML shipped with the wheel (CWD copy wins)
 │   └── cli.py               # thin CLI entrypoint (exposed via pyproject script)
-├── prompts/                 # versioned judge prompts (e.g. faithfulness_v1.md)
-├── configs/                 # YAML: models, thresholds, prompt versions
+├── configs/                 # source YAML: models, thresholds, prompt versions
 ├── testdata/                # importable pkg: MetricStub + hand-written stub eval cases
 ├── tests/
 └── docs/                    # architecture decisions, metric definitions
@@ -144,10 +154,14 @@ Build against the data flow in REVERSE so the novel part is proven first.
   loading, response caching, raw-output capture) + `config.py`.
 - [x] **3.** `scorer/faithfulness.py` — ONE metric, end to end, over hand-written stub
   `EvalCase`s in `testdata/`; prints per-case scores + rationales via an offline demo.
-- [ ] **4.** `validation/` — label those stubs by hand; compute judge↔human agreement;
-  confirm the judge is trustworthy. ← **next**
-- [ ] **5.** THEN: `runner/` (adapter + loop) → `scorer/` relevance + precision →
+- [x] **4.** `validation/` — hand-labeled stubs; judge↔human agreement (% / F1 /
+  Cohen's kappa). Confirmed the judge is trustworthy on a real run (100% agreement).
+- [x] **5.** `runner/` (adapter + loop) → `scorer/` relevance + precision →
   `generator/` → `report/` (JSON + HTML) → CLI threshold-gating + exit codes.
+
+All shipped in v0.1.0. Post-MVP ideas (not built): `answer_correctness` + `context_recall`
+metrics, embedding-backed relevance, and `response_format` (structured outputs) to force
+valid JSON from the judge instead of the tolerant parser.
 
 ## Repo conventions (decisions already made — keep consistent)
 
@@ -161,8 +175,12 @@ Build against the data flow in REVERSE so the novel part is proven first.
   `pyyaml`. Precedence is **CLI flag > env var > YAML default** (applied in
   `load_models_config` via the `overrides` dict). **Secrets come from env only** — YAML
   names *which* env var holds the key (`api_key_env`), never the value.
-- **Self-preference guard:** `judge_matches_generator()` is the pure predicate; the CLI
-  (when built) warns + prompts to continue when judge and generator models match.
+- **Self-preference guard:** `judge_matches_sut()` is the pure predicate; the CLI warns +
+  prompts `[Y/n]` to continue when the judge and system-under-test models match (skipped
+  by `--yes` / non-TTY, but the warning still prints).
+- **Robust judge parsing:** `judge/parsing.py` extracts JSON via the stdlib decoder,
+  tolerating missing/messy fences and prose (chain-of-thought). A reply that still won't
+  parse is skipped, not fatal — one bad case never sinks a run.
 - **Testing is hermetic:** tests and the demo use the deterministic `FakeProvider` (no
   network, no key). The real OpenRouter path is exercised only manually with a key — CI
   never hits the network.
